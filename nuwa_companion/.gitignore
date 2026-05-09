@@ -1,0 +1,65 @@
+# Flutter
+*.flutter-build
+build/
+
+# Android
+*.iml
+.gradle/
+local.properties
+.cxx/
+*.class
+*.dex
+*.jar
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# iOS
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.pbxproj
+*.xcuserstate
+*.xcworkspace
+!default.xcworkspace
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+
+# IDE
+.idea/
+.vscode/
+*.ipr
+*.iws
+
+# Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+
+# Native
+*.so
+*.dylib
+*.dll
+*.pdb
+*.dSYM
+
+# Config
+*.env
+.env.*
+
+# Logs
+*.log
+
+# Test
+.dart_tool/
+packages/
+
+# macOS
+.DS_Store
