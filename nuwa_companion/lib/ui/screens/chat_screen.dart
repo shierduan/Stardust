@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/providers.dart';
 import '../../core/models/models.dart';
-import '../../core/services/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 
@@ -17,7 +16,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
-  bool _isTyping = false;
 
   @override
   void dispose() {
@@ -73,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                   Text(
-                    provider.isConnected ? '在线' : '离线',
+                    provider.isConnected ? '在线' : '本地模式',
                     style: TextStyle(
                       fontSize: 12,
                       color: provider.isConnected
@@ -207,175 +205,108 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputArea() {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 12,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+    return Consumer<NuwaProvider>(
+      builder: (context, provider, _) {
+        final isLoading = provider.isLoading;
+        
+        return Container(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.of(context).padding.bottom + 12,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _inputController,
-              focusNode: _focusNode,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                hintText: '输入消息...',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                filled: true,
-                fillColor: AppColors.surfaceDark,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
               ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
-            ),
+            ],
           ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: _isTyping ? null : _sendMessage,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _isTyping
-                      ? [AppColors.textMuted, AppColors.textMuted]
-                      : AppColors.gradientPrimary,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: _isTyping
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-              ),
-              child: _isTyping
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 22,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _inputController,
+                  focusNode: _focusNode,
+                  enabled: !isLoading,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: '输入消息...',
+                    hintStyle: const TextStyle(color: AppColors.textMuted),
+                    filled: true,
+                    fillColor: AppColors.surfaceDark,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-            ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: isLoading ? null : _sendMessage,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isLoading
+                          ? [AppColors.textMuted, AppColors.textMuted]
+                          : AppColors.gradientPrimary,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: isLoading
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Future<void> _sendMessage() async {
+  void _sendMessage() {
     final text = _inputController.text.trim();
-    if (text.isEmpty || _isTyping) return;
+    if (text.isEmpty) return;
 
     _inputController.clear();
-    setState(() => _isTyping = true);
-
-    final provider = context.read<NuwaProvider>();
-    final configProvider = context.read<AppConfigProvider>();
-
-    final userMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      content: text,
-      isUser: true,
-      timestamp: DateTime.now(),
-      status: MessageStatus.sent,
-    );
-
-    provider.addMessage(userMessage);
-
-    final loadingMessage = ChatMessage(
-      id: '${DateTime.now().millisecondsSinceEpoch}_loading',
-      content: '思考中...',
-      isUser: false,
-      timestamp: DateTime.now(),
-      status: MessageStatus.sending,
-    );
-    provider.addMessage(loadingMessage);
-
+    _focusNode.unfocus();
+    
+    context.read<NuwaProvider>().sendMessage(text);
     _scrollToBottom();
-
-    try {
-      final apiService = ApiService.fromConfig(configProvider.config);
-      final result = await apiService.processInput(
-        userInput: text,
-        currentState: provider.state,
-        retrievedMemories: provider.recentMemories,
-      );
-
-      provider.updateMessage(loadingMessage.id,
-          loadingMessage.copyWith(status: MessageStatus.sent));
-
-      if (result != null) {
-        final reply = result['reply'] as String? ?? '抱歉，我现在无法回应。';
-        final thought = result['thought'] as String?;
-
-        final assistantMessage = ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          content: reply,
-          isUser: false,
-          timestamp: DateTime.now(),
-          status: MessageStatus.sent,
-          thought: thought,
-        );
-
-        provider.updateMessage(
-            loadingMessage.id,
-            assistantMessage.copyWith(
-              content: reply,
-            ));
-
-        _simulateStateUpdate(provider);
-      } else {
-        provider.updateMessage(
-          loadingMessage.id,
-          loadingMessage.copyWith(
-            content: '抱歉，无法连接到服务器。请检查设置中的服务器配置。',
-            status: MessageStatus.error,
-          ),
-        );
-      }
-    } catch (e) {
-      provider.updateMessage(
-        loadingMessage.id,
-        loadingMessage.copyWith(
-          content: '发生错误: $e',
-          status: MessageStatus.error,
-        ),
-      );
-    } finally {
-      setState(() => _isTyping = false);
-      _scrollToBottom();
-    }
   }
 
   void _scrollToBottom() {
@@ -388,22 +319,6 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
-  }
-
-  void _simulateStateUpdate(NuwaProvider provider) {
-    final emotionUpdates = <String, double>{};
-    final emotions = EmotionalSpectrum.emotions;
-    for (var emotion in emotions) {
-      final current = provider.emotionalSpectrum[emotion];
-      final delta = (0.1 - (current - 0.5).abs() * 0.1);
-      emotionUpdates[emotion] = (current + delta).clamp(0.3, 0.7);
-    }
-    provider.updateEmotionalSpectrum(emotionUpdates);
-
-    provider.updateBioRhythm(
-      energy: (provider.bioRhythm.energy - 0.02).clamp(0.0, 1.0),
-      social: (provider.bioRhythm.social + 0.05).clamp(0.0, 1.0),
-    );
   }
 
   void _clearChat() {
